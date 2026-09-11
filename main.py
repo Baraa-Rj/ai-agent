@@ -1,12 +1,11 @@
 import argparse
-import json
 import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from prompts import get_system_prompt
-from functions.call_function import get_available_functions
+from functions.call_function import call_function, get_available_functions
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -38,12 +37,13 @@ def create_client() -> OpenAI:
 
 def generate_content(client: OpenAI, prompt: str) -> ChatCompletion:
     return client.chat.completions.create(
-        model="openrouter/free",
+        model="google/gemini-2.5-flash",
         messages=[
             {"role": "system", "content": get_system_prompt()},
             {"role": "user", "content": prompt},
         ],
         tools=get_available_functions(),
+        max_tokens=1024,
     )
 
 
@@ -68,8 +68,13 @@ def main() -> None:
         for tool_call in message.tool_calls:
             if tool_call.type != "function":
                 continue
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            print(f"Calling function: {tool_call.function.name}({function_args})")
+            result_message = call_function(tool_call, verbose=args.verbose)
+            if not result_message.get("content"):
+                raise RuntimeError(
+                    f"No content returned for function: {tool_call.function.name}"
+                )
+            if args.verbose:
+                print(f"-> {result_message['content']}")
     else:
         print(message.content)
 
