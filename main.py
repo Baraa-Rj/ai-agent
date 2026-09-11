@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
-
+from prompts import get_system_prompt
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -40,7 +40,9 @@ def create_client() -> OpenAI:
 def generate_content(client: OpenAI, prompt: str) -> ChatCompletion:
     return client.chat.completions.create(
         model="openrouter/free",
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": get_system_prompt()},
+            {"role": "user", "content": prompt}],
     )
 
 
