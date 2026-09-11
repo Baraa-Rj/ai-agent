@@ -41,5 +41,6 @@ schema_get_files_info = {
         },
     },
 }
+
 def get_files_info_schema() -> dict:
     return schema_get_files_info

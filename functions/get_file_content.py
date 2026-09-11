@@ -18,9 +18,34 @@ def get_file_content(working_directory: str, file_path: str) -> str:
             content = f.read(MAX_CHARS)
 
             if f.read(1):
-                content += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
+                content += (
+                    f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
+                )
 
             return content
 
     except Exception as e:
         return f"Error: {str(e)}"
+
+
+schema_get_file_content = {
+    "type": "function",
+    "function": {
+        "name": "get_file_content",
+        "description": "Reads the content of a specified file relative to the working directory",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to the file to read, relative to the working directory",
+                }
+            },
+            "required": ["file_path"],
+        },
+    },
+}
+
+
+def get_file_content_schema() -> dict:
+    return schema_get_file_content

@@ -3,20 +3,16 @@ import subprocess
 
 
 def run_python_file(
-    working_directory: str,
-    file_path: str,
-    args: list[str] | None = None
+    working_directory: str, file_path: str, args: list[str] | None = None
 ) -> str:
 
     working_dir_abs = os.path.abspath(working_directory)
-    file_abspath = os.path.abspath(
-        os.path.join(working_dir_abs, file_path)
-    )
+    file_abspath = os.path.abspath(os.path.join(working_dir_abs, file_path))
 
     if os.path.commonpath([working_dir_abs, file_abspath]) != working_dir_abs:
         return (
             f'Error: Cannot execute "{file_path}" '
-            f'as it is outside the permitted working directory'
+            f"as it is outside the permitted working directory"
         )
 
     if not os.path.isfile(file_abspath):
@@ -54,4 +50,37 @@ def run_python_file(
         return string_result
     except Exception as e:
         return f"Error: executing Python file: {e}"
-        
+
+
+schema_run_python_file = {
+    "type": "function",
+    "function": {
+        "name": "run_python_file",
+        "description": (
+            "Executes a Python file in the working directory and returns its output"
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": (
+                        "Path to the Python file to execute, relative to the working directory"
+                    ),
+                },
+                "args": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Optional list of arguments to pass to the Python script"
+                    ),
+                },
+            },
+            "required": ["file_path"],
+        },
+    },
+}
+
+
+def run_python_file_schema() -> dict:
+    return schema_run_python_file
