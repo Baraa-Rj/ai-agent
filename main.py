@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -35,48 +36,61 @@ def create_client() -> OpenAI:
     )
 
 
-def generate_content(client: OpenAI, prompt: str) -> ChatCompletion:
+def generate_content(client: OpenAI, messages: list) -> ChatCompletion:
     return client.chat.completions.create(
         model="google/gemini-2.5-flash",
-        messages=[
-            {"role": "system", "content": get_system_prompt()},
-            {"role": "user", "content": prompt},
-        ],
+        messages=messages,
         tools=get_available_functions(),
         max_tokens=1024,
     )
 
 
+MAX_ITERATIONS = 20
+
+
 def main() -> None:
     args = parse_arguments()
 
-    with create_client() as client:
-        response = generate_content(client, args.user_input)
-
-    if not response.choices:
-        raise RuntimeError("The API returned no choices.")
-
-    message = response.choices[0].message
-
     if args.verbose:
         print(f"User prompt: {args.user_input}")
-        if response.usage is not None:
-            print(f"Prompt tokens: {response.usage.prompt_tokens}")
-            print(f"Response tokens: {response.usage.completion_tokens}")
 
-    if message.tool_calls:
-        for tool_call in message.tool_calls:
-            if tool_call.type != "function":
-                continue
-            result_message = call_function(tool_call, verbose=args.verbose)
-            if not result_message.get("content"):
-                raise RuntimeError(
-                    f"No content returned for function: {tool_call.function.name}"
-                )
-            if args.verbose:
-                print(f"-> {result_message['content']}")
-    else:
-        print(message.content)
+    messages: list = [
+        {"role": "system", "content": get_system_prompt()},
+        {"role": "user", "content": args.user_input},
+    ]
+
+    with create_client() as client:
+        for _ in range(MAX_ITERATIONS):
+            response = generate_content(client, messages)
+
+            if not response.choices:
+                raise RuntimeError("The API returned no choices.")
+
+            if args.verbose and response.usage is not None:
+                print(f"Prompt tokens: {response.usage.prompt_tokens}")
+                print(f"Response tokens: {response.usage.completion_tokens}")
+
+            message = response.choices[0].message
+            messages.append(message)
+
+            if not message.tool_calls:
+                print(message.content)
+                return
+
+            for tool_call in message.tool_calls:
+                if tool_call.type != "function":
+                    continue
+                result_message = call_function(tool_call, verbose=args.verbose)
+                if not result_message.get("content"):
+                    raise RuntimeError(
+                        f"No content returned for function: {tool_call.function.name}"
+                    )
+                if args.verbose:
+                    print(f"-> {result_message['content']}")
+                messages.append(result_message)
+
+    print(f"Reached maximum iterations ({MAX_ITERATIONS}) without a final response.")
+    sys.exit(1)
 
 
 if __name__ == "__main__":
