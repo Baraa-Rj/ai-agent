@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 
 from dotenv import load_dotenv
@@ -55,18 +56,22 @@ def main() -> None:
     if not response.choices:
         raise RuntimeError("The API returned no choices.")
 
-    content = response.choices[0].message.content
-    if content is None:
-        raise RuntimeError("The API returned no text content.")
+    message = response.choices[0].message
 
     if args.verbose:
         print(f"User prompt: {args.user_input}")
-
         if response.usage is not None:
             print(f"Prompt tokens: {response.usage.prompt_tokens}")
             print(f"Response tokens: {response.usage.completion_tokens}")
 
-    print("Generated Content:\n", content)
+    if message.tool_calls:
+        for tool_call in message.tool_calls:
+            if tool_call.type != "function":
+                continue
+            function_args = json.loads(tool_call.function.arguments or "{}")
+            print(f"Calling function: {tool_call.function.name}({function_args})")
+    else:
+        print(message.content)
 
 
 if __name__ == "__main__":
