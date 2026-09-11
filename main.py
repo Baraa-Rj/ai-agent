@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from prompts import get_system_prompt
+from functions.call_function import get_available_functions
+
 
 def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Send a prompt to an AI model."
-    )
+    parser = argparse.ArgumentParser(description="Send a prompt to an AI model.")
     parser.add_argument(
         "user_input",
         help="The prompt to send to the model.",
@@ -27,9 +27,7 @@ def create_client() -> OpenAI:
 
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError(
-            "OPENROUTER_API_KEY is not set in the environment variables."
-        )
+        raise ValueError("OPENROUTER_API_KEY is not set in the environment variables.")
 
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
@@ -42,7 +40,9 @@ def generate_content(client: OpenAI, prompt: str) -> ChatCompletion:
         model="openrouter/free",
         messages=[
             {"role": "system", "content": get_system_prompt()},
-            {"role": "user", "content": prompt}],
+            {"role": "user", "content": prompt},
+        ],
+        tools=get_available_functions(),
     )
 
 
