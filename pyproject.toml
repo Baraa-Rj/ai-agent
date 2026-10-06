@@ -1,10 +1,11 @@
 [project]
-name = "boot-dev-agent"
-version = "0.1.0"
-description = "Add your description here"
+name = "ai-agent"
+version = "0.2.0"
+description = "Tool-calling coding agent with Anthropic and OpenRouter providers, confined to one working directory"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "anthropic==1.11.0",
     "openai==2.44.0",
     "python-dotenv==1.1.0",
 ]
@@ -12,7 +13,17 @@ dependencies = [
 [tool.pyright]
 pythonVersion = "3.10"
 
+[tool.ruff]
+target-version = "py310"
+# The sample project the agent works on is kept as the course provided it.
+extend-exclude = ["calculator"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
 [dependency-groups]
 dev = [
+    "pytest>=8.0",
     "ruff>=0.16.7",
 ]
